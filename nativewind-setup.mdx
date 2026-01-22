@@ -1,0 +1,114 @@
+# NativeWind v4 + Expo Router Setup Guide
+
+This guide outlines the "Official Approach" to integrating NativeWind v4 into an Expo SDK 50+ project.
+
+## 1. Installation
+
+Install the core dependencies. We use specific versions of `tailwindcss` and `nativewind` to ensure compatibility with the Expo Metro bundler.
+
+```bash
+npx expo install nativewind@4.2.1 tailwindcss@3.4.17 react-native-reanimated react-native-safe-area-context
+
+That is exactly the kind of "tiny typo" that causes hours of headaches! In metro.config.js, that input path is the bridge between Tailwind's compiler and your app's runtime; if it's off by even one letter, the styles won't inject.
+
+Here is your definitive reference guide based on the setup that successfully worked for you.
+
+NativeWind v4 + Expo (SDK 50+) Setup Guide
+1. Dependencies
+The most stable versions for current Expo projects:
+
+Bash
+
+npx expo install nativewind@4.2.1 tailwindcss@3.4.17 react-native-reanimated react-native-safe-area-context
+
+## 2. Configuration Files
+
+Run npx tailwindcss init to create a tailwind.config.js file
+
+tailwind.config.js
+Ensure your content paths cover the app directory (where Expo Router lives).
+
+JavaScript
+
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
+  presets: [require("nativewind/preset")],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+
+babel.config.js
+The jsxImportSource is mandatory for v4 to handle the className prop on native components.
+
+JavaScript
+
+module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: [
+      ["babel-preset-expo", { jsxImportSource: "nativewind" }],
+      "nativewind/babel",
+    ],
+    plugins: ["react-native-reanimated/plugin"],
+  };
+};
+
+metro.config.js
+The Critical Link: The input must match your CSS filename exactly.
+
+JavaScript
+
+const { getDefaultConfig } = require("expo/metro-config");
+const { withNativeWind } = require("nativewind/metro");
+
+const config = getDefaultConfig(__dirname);
+
+// Ensure this path points exactly to your CSS file
+module.exports = withNativeWind(config, { input: "./globals.css" });
+
+Run these two commands in your terminal from your project root if babel and metro config file do not exist
+
+Bash
+
+# Generates babel.config.js
+npx expo customize babel.config.js
+
+# Generates metro.config.js
+npx expo customize metro.config.js
+
+
+## 3. Global Styles (globals.css)
+Place this in your project root:
+
+CSS
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+## 4. Entry Point
+Import your global CSS at the absolute top of your app/_layout.tsx file.
+
+TypeScript
+
+import "./globals.css";
+import { Stack } from 'expo-router';
+
+export default function RootLayout() {
+  return <Stack />;
+}
+
+## 5. Troubleshooting
+Styles not applying? Run npx expo start -c to clear the cache.
+
+Wrong filename? Ensure metro.config.js points to ./globals.css and NOT ./global.css.
+
+TypeScript errors? Create a nativewind-env.d.ts file in your root and add /// <reference types="nativewind/types" />.
+
+Setup Complete! Your React Native components now accept className props.
+
+Eslint and prettier setup guide:
+https://docs.expo.dev/guides/using-eslint/
