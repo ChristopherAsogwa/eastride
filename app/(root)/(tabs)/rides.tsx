@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const Rides = () => {
   return (
     <SafeAreaView className="flex justify-center items-center">
-      <Text className="text-black bg-white text-3xl">Home</Text>
+      <Text className="text-black bg-white text-3xl">Rides</Text>
     </SafeAreaView>
   );
 };
