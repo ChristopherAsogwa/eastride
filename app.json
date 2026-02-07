@@ -10,7 +10,12 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.eastride"
+      "bundleIdentifier": "com.anonymous.eastride",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to show where you are on the map and book a ride.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location to track your ride even when the app is in the background.",
+        "NSLocationAlwaysUsageDescription": "This app needs access to your location to provide better ride-hailing services."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -39,7 +44,11 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      ["@stripe/stripe-react-native", {
+        "merchantIdentifier": "merchant.com.yourname",
+        "enableGooglePay": false 
+      }]
     ],
     "experiments": {
       "typedRoutes": true,

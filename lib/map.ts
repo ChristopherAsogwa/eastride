@@ -37,8 +37,8 @@ export const calculateRegion = ({
 }) => {
   if (!userLatitude || !userLongitude) {
     return {
-      latitude: 37.78825,
-      longitude: -122.4324,
+      latitude: 6.5244,
+      longitude: 3.3792,
       latitudeDelta: 0.01,
       longitudeDelta: 0.01,
     };
@@ -90,32 +90,48 @@ export const calculateDriverTimes = async ({
     !userLongitude ||
     !destinationLatitude ||
     !destinationLongitude
-  )
+  ) {
+    console.log("DEBUG: 🛑 Missing coordinates. Check your LocationStore.");
     return;
+  }
 
   try {
     const timesPromises = markers.map(async (marker) => {
+      // 1. Check Driver to User
       const responseToUser = await fetch(
         `https://maps.googleapis.com/maps/api/directions/json?origin=${marker.latitude},${marker.longitude}&destination=${userLatitude},${userLongitude}&key=${directionsAPI}`,
       );
       const dataToUser = await responseToUser.json();
-      const timeToUser = dataToUser.routes[0].legs[0].duration.value; // Time in seconds
 
+      const timeToUser = dataToUser.routes[0].legs[0].duration.value;
+
+      // 2. Check User to Destination
       const responseToDestination = await fetch(
         `https://maps.googleapis.com/maps/api/directions/json?origin=${userLatitude},${userLongitude}&destination=${destinationLatitude},${destinationLongitude}&key=${directionsAPI}`,
       );
       const dataToDestination = await responseToDestination.json();
-      const timeToDestination =
-        dataToDestination.routes[0].legs[0].duration.value; // Time in seconds
 
-      const totalTime = (timeToUser + timeToDestination) / 60; // Total time in minutes
-      const price = (totalTime * 0.5).toFixed(2); // Calculate price based on time
+      if (dataToDestination.status !== "OK") {
+        console.warn(
+          `DEBUG: 🏁 User to Destination failed: ${dataToDestination.status}`,
+        );
+        return null;
+      }
+
+      const timeToDestination =
+        dataToDestination.routes[0].legs[0].duration.value;
+      const totalTime = (timeToUser + timeToDestination) / 60;
+      const price = (totalTime * 0.5).toFixed(2);
 
       return { ...marker, time: totalTime, price };
     });
 
-    return await Promise.all(timesPromises);
+    const results = await Promise.all(timesPromises);
+    const validDrivers = results.filter((item) => item !== null);
+
+    return validDrivers;
   } catch (error) {
-    console.error("Error calculating driver times:", error);
+    console.error("DEBUG: ❌ API Fetch Error:", error);
+    return [];
   }
 };

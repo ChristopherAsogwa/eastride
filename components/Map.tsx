@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 
 import { icons } from "@/constants";
-import { useFetch } from "@/lib/fetch";
 import {
   calculateDriverTimes,
   calculateRegion,
@@ -12,6 +10,8 @@ import {
 } from "@/lib/map";
 import { useDriverStore, useLocationStore } from "@/store";
 import { Driver, MarkerData } from "@/types/type";
+import { useFetch } from "@/lib/fetch";
+import { ActivityIndicator, Text, View } from "react-native";
 
 const directionsAPI = process.env.EXPO_PUBLIC_DIRECTIONS_API_KEY;
 
@@ -39,25 +39,24 @@ const Map = () => {
 
       setMarkers(newMarkers);
     }
-  }, [drivers, userLatitude, userLongitude]);
+  }, [drivers, setDrivers, userLatitude, userLongitude]);
 
   useEffect(() => {
-    if (
-      markers.length > 0 &&
-      destinationLatitude !== undefined &&
-      destinationLongitude !== undefined
-    ) {
+    if (markers.length > 0 && destinationLatitude && destinationLongitude) {
       calculateDriverTimes({
         markers,
         userLatitude,
         userLongitude,
         destinationLatitude,
         destinationLongitude,
-      }).then((drivers) => {
-        setDrivers(drivers as MarkerData[]);
+      }).then((calculatedDrivers) => {
+        // Only update if we actually got results back
+        if (calculatedDrivers) {
+          setDrivers(calculatedDrivers as MarkerData[]);
+        }
       });
     }
-  }, [markers, destinationLatitude, destinationLongitude]);
+  }, [markers, destinationLatitude, destinationLongitude]); // REMOVE setDrivers from here to prevent loops
 
   const region = calculateRegion({
     userLatitude,
@@ -65,8 +64,6 @@ const Map = () => {
     destinationLatitude,
     destinationLongitude,
   });
-
-  console.log("Current Map Region:", region);
 
   if (loading || (!userLatitude && !userLongitude))
     return (
@@ -85,7 +82,7 @@ const Map = () => {
   return (
     <MapView
       // provider={PROVIDER_DEFAULT}
-      provider={PROVIDER_GOOGLE}
+      provider={PROVIDER_DEFAULT}
       style={{ flex: 1, width: "100%", height: "100%" }}
       className="w-full h-full rounded-2xl"
       tintColor="black"
@@ -132,7 +129,7 @@ const Map = () => {
             }}
             apikey={directionsAPI!}
             strokeColor="#0286FF"
-            strokeWidth={2}
+            strokeWidth={3}
           />
         </>
       )}
